@@ -126,13 +126,24 @@ public class SideMenu extends DrawerLayout {
         return sideMenuView;
     }
 
-    private void setSideMenuWidth(final ContentView sideMenuView) {
+// reference for this commit: https://github.com/wix/react-native-navigation/blob/b6818873400587540480a36ba065f707f7a725e5/android/app/src/main/java/com/reactnativenavigation/views/SideMenu.java
+    private void setSideMenuWidth(final ContentView sideMenuView, @Nullable final SideMenuParams params) {
         sideMenuView.setOnDisplayListener(new Screen.OnDisplayListener() {
             @Override
             public void onDisplay() {
-                ViewGroup.LayoutParams lp = sideMenuView.getLayoutParams();
-                lp.width = sideMenuView.getChildAt(0).getWidth();
-                sideMenuView.setLayoutParams(lp);
+                final ViewGroup.LayoutParams lp = sideMenuView.getLayoutParams();
+                if (params != null && params.fixedWidth > 0) {
+                    lp.width = params.fixedWidth;
+                    sideMenuView.setLayoutParams(lp);
+                } else {
+                    NavigationApplication.instance.getUiManagerModule().measure(sideMenuView.getId(), new Callback() {
+                        @Override
+                        public void invoke(Object... args) {
+                            lp.width = sideMenuView.getChildAt(0).getWidth();
+                            sideMenuView.setLayoutParams(lp);
+                        }
+                    });
+                }
             }
         });
     }
