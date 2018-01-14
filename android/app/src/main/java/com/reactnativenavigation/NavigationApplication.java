@@ -95,9 +95,9 @@ public abstract class NavigationApplication extends Application implements React
 
     public UIManagerModule getUiManagerModule() {
         return getReactGateway()
-            .getReactInstanceManager()
-            .getCurrentReactContext()
-            .getNativeModule(UIManagerModule.class);
+                .getReactInstanceManager()
+                .getCurrentReactContext()
+                .getNativeModule(UIManagerModule.class);
     }
 
     /**

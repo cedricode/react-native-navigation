@@ -381,13 +381,6 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
   NSMutableDictionary *titleTextAttributes = [RCTHelpers textAttributesFromDictionary:self.navigatorStyle withPrefix:@"navBarText" baseFont:[UIFont boldSystemFontOfSize:17]];
   [self.navigationController.navigationBar setTitleTextAttributes:titleTextAttributes];
   
-  if (self.navigationItem.titleView && [self.navigationItem.titleView isKindOfClass:[RCCTitleView class]]) {
-    
-    RCCTitleView *titleView = (RCCTitleView *)self.navigationItem.titleView;
-    RCCTitleViewHelper *helper = [[RCCTitleViewHelper alloc] init:viewController navigationController:viewController.navigationController title:titleView.titleLabel.text subtitle:titleView.subtitleLabel.text titleImageData:nil isSetSubtitle:NO];
-    [helper setup:self.navigatorStyle];
-  }
-  
   NSMutableDictionary *navButtonTextAttributes = [RCTHelpers textAttributesFromDictionary:self.navigatorStyle withPrefix:@"navBarButton"];
   NSMutableDictionary *leftNavButtonTextAttributes = [RCTHelpers textAttributesFromDictionary:self.navigatorStyle withPrefix:@"navBarLeftButton"];
   NSMutableDictionary *rightNavButtonTextAttributes = [RCTHelpers textAttributesFromDictionary:self.navigatorStyle withPrefix:@"navBarRightButton"];
@@ -412,6 +405,7 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
         [mergedAttributes addEntriesFromDictionary:previousAttributes];
 
         [item setTitleTextAttributes:[mergedAttributes copy] forState:UIControlStateNormal];
+        [item setTitleTextAttributes:[mergedAttributes copy] forState:UIControlStateHighlighted];
       }
     }
 
@@ -428,11 +422,13 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
       [mergedAttributes addEntriesFromDictionary:previousAttributes];
 
       [item setTitleTextAttributes:[mergedAttributes copy] forState:UIControlStateNormal];
+      [item setTitleTextAttributes:[mergedAttributes copy] forState:UIControlStateHighlighted];
     }
 
     // At the moment, this seems to be the only thing that gets the back button correctly
     [navButtonTextAttributes removeObjectForKey:NSForegroundColorAttributeName];
     [[UIBarButtonItem appearance] setTitleTextAttributes:navButtonTextAttributes forState:UIControlStateNormal];
+    [[UIBarButtonItem appearance] setTitleTextAttributes:navButtonTextAttributes forState:UIControlStateHighlighted];
   }
   
   NSString *navBarButtonColor = self.navigatorStyle[@"navBarButtonColor"];
@@ -446,6 +442,20 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
     viewController.navigationController.navigationBar.tintColor = nil;
   }
   
+  BOOL topBarElevationShadowEnabled = self.navigatorStyle[@"topBarElevationShadowEnabled"] != (id)[NSNull null] ? [RCTConvert CGFloat:self.navigatorStyle[@"topBarElevationShadowEnabled"]] : NO;
+
+  if (topBarElevationShadowEnabled) {
+    CGFloat shadowOpacity = self.navigatorStyle[@"topBarShadowOpacity"] != 0 ? [RCTConvert CGFloat:self.navigatorStyle[@"topBarShadowOpacity"]] : 0.2;
+    CGFloat shadowOffset = self.navigatorStyle[@"topBarShadowOffset"] != 0 ? [RCTConvert CGFloat:self.navigatorStyle[@"topBarShadowOffset"]] : 3.0;
+    CGFloat shadowRadius = self.navigatorStyle[@"topBarShadowRadius"] != 0 ? [RCTConvert CGFloat:self.navigatorStyle[@"topBarShadowRadius"]] : 2.0;
+    UIColor *shadowColor = self.navigatorStyle[@"topBarShadowColor"] != (id)[NSNull null] ? [RCTConvert UIColor:self.navigatorStyle[@"topBarShadowColor"]] : UIColor.blackColor;
+
+    viewController.navigationController.navigationBar.layer.shadowOpacity = shadowOpacity;
+    viewController.navigationController.navigationBar.layer.shadowColor = shadowColor.CGColor;
+    viewController.navigationController.navigationBar.layer.shadowOffset = CGSizeMake(0, shadowOffset);
+    viewController.navigationController.navigationBar.layer.shadowRadius = shadowRadius;
+  }
+
   BOOL viewControllerBasedStatusBar = false;
   
   NSObject *viewControllerBasedStatusBarAppearance = [[NSBundle mainBundle] infoDictionary][@"UIViewControllerBasedStatusBarAppearance"];
@@ -484,95 +494,11 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
     [viewController setNeedsStatusBarAppearanceUpdate];
   }
   
-  if (viewController.tabBarController && viewController.tabBarController.tabBar != (id)[NSNull null]) {
+  NSNumber *tabBarHidden = self.navigatorStyle[@"tabBarHidden"];
+  BOOL tabBarHiddenBool = tabBarHidden ? [tabBarHidden boolValue] : NO;
+  if (tabBarHiddenBool) {
     UITabBar *tabBar = viewController.tabBarController.tabBar;
-    
-    if (tabBar && tabBar != (id)[NSNull null]) {
-      UIColor *buttonColor = nil;
-      UIColor *selectedButtonColor = nil;
-      UIColor *labelColor = nil;
-      UIColor *selectedLabelColor = nil;
-      
-      NSNumber *tabBarHidden = self.navigatorStyle[@"tabBarHidden"];
-      BOOL tabBarHiddenBool = tabBarHidden ? [tabBarHidden boolValue] : NO;
-      if (tabBarHiddenBool) {
-        tabBar.transform = CGAffineTransformMakeTranslation(0, tabBar.frame.size.height);
-      }
-      
-      NSString *tabBarButtonColor = self.navigatorStyle[@"tabBarButtonColor"];
-      NSString *tabBarSelectedButtonColor = self.navigatorStyle[@"tabBarSelectedButtonColor"];
-      
-      if (tabBarButtonColor)
-      {
-        buttonColor = tabBarButtonColor != (id)[NSNull null] ? [RCTConvert UIColor:tabBarButtonColor] : nil;
-        
-        if (tabBarSelectedButtonColor) {
-          selectedButtonColor = tabBarSelectedButtonColor != (id)[NSNull null] ? [RCTConvert UIColor:tabBarSelectedButtonColor] : nil;
-          
-          tabBar.tintColor = selectedLabelColor = selectedButtonColor;
-          tabBar.unselectedItemTintColor = labelColor = buttonColor;
-        }
-        else {
-          tabBar.tintColor = labelColor = buttonColor;
-        }
-      }
-      else if (tabBarSelectedButtonColor) {
-        selectedButtonColor = tabBarSelectedButtonColor != (id)[NSNull null] ? [RCTConvert UIColor:tabBarSelectedButtonColor] : nil;
-        tabBar.tintColor = selectedLabelColor = selectedButtonColor;
-      }
-      
-      NSString *tabBarLabelColor = self.navigatorStyle[@"tabBarLabelColor"];
-      if(tabBarLabelColor) {
-        UIColor *color = tabBarLabelColor != (id)[NSNull null] ? [RCTConvert UIColor:tabBarLabelColor] : nil;
-        labelColor = color;
-      }
-      NSString *tabBarSelectedLabelColor = self.navigatorStyle[@"tabBarSelectedLabelColor"];
-      if(tabBarLabelColor) {
-        UIColor *color = tabBarSelectedLabelColor != (id)[NSNull null] ? [RCTConvert UIColor:tabBarSelectedLabelColor] : nil;
-        selectedLabelColor = color;
-      }
-      
-      NSString *tabBarBackgroundColor = self.navigatorStyle[@"tabBarBackgroundColor"];
-      if (tabBarBackgroundColor)
-      {
-        UIColor *color = tabBarBackgroundColor != (id)[NSNull null] ? [RCTConvert UIColor:tabBarBackgroundColor] : nil;
-        tabBar.barTintColor = color;
-      }
-      
-      NSNumber *tabBarTranslucent = self.navigatorStyle[@"tabBarTranslucent"];
-      if (tabBarTranslucent)
-      {
-        BOOL tabBarTranslucentBool = tabBarTranslucent ? [tabBarTranslucent boolValue] : NO;
-        tabBar.translucent = tabBarTranslucentBool;
-      }
-      
-      NSNumber *tabBarHideShadow = self.navigatorStyle[@"tabBarHideShadow"];
-      if (tabBarHideShadow)
-      {
-        BOOL tabBarHideShadowBool = tabBarHideShadow ? [tabBarHideShadow boolValue] : NO;
-        tabBar.clipsToBounds = tabBarHideShadowBool ? YES : NO;
-      }
-      
-      for (UIViewController *tabViewController in [viewController.tabBarController viewControllers]) {
-        NSMutableDictionary *unselectedAttributes = [RCTHelpers textAttributesFromDictionary:self.navigatorStyle withPrefix:@"tabBarText" baseFont:[UIFont systemFontOfSize:10]];
-        if (!unselectedAttributes[NSForegroundColorAttributeName] && labelColor) {
-          unselectedAttributes[NSForegroundColorAttributeName] = labelColor;
-        }
-        [tabViewController.tabBarItem setTitleTextAttributes:unselectedAttributes forState:UIControlStateNormal];
-        
-        
-        NSMutableDictionary *selectedAttributes = [RCTHelpers textAttributesFromDictionary:self.navigatorStyle withPrefix:@"tabBarSelectedText" baseFont:[UIFont systemFontOfSize:10]];
-        if (!selectedAttributes[NSForegroundColorAttributeName] && selectedLabelColor) {
-          selectedAttributes[NSForegroundColorAttributeName] = selectedLabelColor;
-        }
-        [tabViewController.tabBarItem setTitleTextAttributes:selectedAttributes forState:UIControlStateSelected];
-        
-        if (buttonColor)
-        {
-          tabViewController.tabBarItem.image = [[RCCTabBarController image:tabViewController.tabBarItem.image withColor:buttonColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-        }
-      }
-    }
+    tabBar.transform = CGAffineTransformMakeTranslation(0, tabBar.frame.size.height);
   }
 
   NSNumber *navBarHidden = self.navigatorStyle[@"navBarHidden"];
@@ -803,7 +729,7 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
 - (BOOL)hidesBottomBarWhenPushed
 {
   if (!self._hidesBottomBarWhenPushed) return NO;
-  return (self.navigationController.topViewController == self);
+  return (self.navigationController.topViewController == self) && ![(RCCTabBarController*)self.tabBarController tabBarHidden];
 }
 
 - (BOOL)prefersStatusBarHidden

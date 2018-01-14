@@ -55,7 +55,7 @@
   return YES;
 }
 
-+ (UIImage *)image:(UIImage*)image withColor:(UIColor *)color1
+- (UIImage *)image:(UIImage*)image withColor:(UIColor *)color1
 {
   UIGraphicsBeginImageContextWithOptions(image.size, NO, image.scale);
   CGContextRef context = UIGraphicsGetCurrentContext();
@@ -159,7 +159,7 @@
       iconImage = [RCTConvert UIImage:icon];
       if (buttonColor)
       {
-        iconImage = [[RCCTabBarController image:iconImage withColor:buttonColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+        iconImage = [[self image:iconImage withColor:buttonColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
       }
     }
     UIImage *iconImageSelected = nil;
@@ -327,7 +327,7 @@
       if (icon && icon != (id)[NSNull null])
       {
         iconImage = [RCTConvert UIImage:icon];
-        iconImage = [[RCCTabBarController image:iconImage withColor:self.tabBar.tintColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+        iconImage = [[self image:iconImage withColor:self.tabBar.tintColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
         viewController.tabBarItem.image = iconImage;
       }
       
@@ -350,6 +350,7 @@
   if ([performAction isEqualToString:@"setTabBarHidden"])
   {
     BOOL hidden = [actionParams[@"hidden"] boolValue];
+    self.tabBarHidden = hidden;
     
     CGRect nextFrame = self.tabBar.frame;
     nextFrame.origin.y = UIScreen.mainScreen.bounds.size.height - (hidden ? 0 : self.tabBar.frame.size.height);

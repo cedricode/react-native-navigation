@@ -41,7 +41,7 @@ NSString const *CALLBACK_ASSOCIATED_ID = @"RCCNavigationController.CALLBACK_ASSO
   
   RCCViewController *viewController = [[RCCViewController alloc] initWithComponent:component passProps:passProps navigatorStyle:navigatorStyle globalProps:globalProps bridge:bridge];
   if (!viewController) return nil;
-  viewController.controllerId = props[@"id"];
+  viewController.controllerId = passProps[@"screenInstanceID"];
   
   NSArray *leftButtons = props[@"leftButtons"];
   if (leftButtons)
@@ -172,6 +172,8 @@ NSString const *CALLBACK_ASSOCIATED_ID = @"RCCNavigationController.CALLBACK_ASSO
       if ([self.topViewController isKindOfClass:[RCCViewController class]])
       {
         RCCViewController *topViewController = ((RCCViewController*)self.topViewController);
+        topViewController.previewController = nil;
+        [topViewController.navigationController unregisterForPreviewingWithContext:topViewController.previewContext];
         viewController.previewActions = previewActions;
         viewController.previewCommit = actionParams[@"previewCommit"] ? [actionParams[@"previewCommit"] boolValue] : YES;
         NSNumber *previewHeight = actionParams[@"previewHeight"];
@@ -184,7 +186,7 @@ NSString const *CALLBACK_ASSOCIATED_ID = @"RCCNavigationController.CALLBACK_ASSO
             [bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
               UIView *view = viewRegistry[previewViewID];
               topViewController.previewView = view;
-              [topViewController registerForPreviewingWithDelegate:(id)topViewController sourceView:view];
+              topViewController.previewContext = [topViewController registerForPreviewingWithDelegate:(id)topViewController sourceView:view];
             }];
           });
           topViewController.previewController = viewController;
@@ -257,7 +259,7 @@ NSString const *CALLBACK_ASSOCIATED_ID = @"RCCNavigationController.CALLBACK_ASSO
     if (!component) return;
     
     NSMutableDictionary *passProps = [actionParams[@"passProps"] mutableCopy];
-    passProps[@"commantType"] = @"resetTo";
+    passProps[@"commandType"] = @"resetTo";
     NSDictionary *navigatorStyle = actionParams[@"style"];
     
     RCCViewController *viewController = [[RCCViewController alloc] initWithComponent:component passProps:passProps navigatorStyle:navigatorStyle globalProps:nil bridge:bridge];
@@ -337,23 +339,23 @@ NSString const *CALLBACK_ASSOCIATED_ID = @"RCCNavigationController.CALLBACK_ASSO
   // setStyle
   if ([performAction isEqualToString:@"setStyle"])
   {
-    for (UIViewController *viewController in self.viewControllers) {
-      if ([viewController isKindOfClass:[RCCViewController class]])
-      {
-        RCCViewController *rccViewController = (RCCViewController*)viewController;
-        
-        NSDictionary *navigatorStyle = [[NSDictionary alloc] initWithDictionary:actionParams copyItems:YES];
-        NSMutableDictionary *mergedStyle = [NSMutableDictionary dictionaryWithDictionary:rccViewController.navigatorStyle];
-        
-        // there are a few styles that we don't want to remember from our parent (they should be local)
-        [mergedStyle setValuesForKeysWithDictionary:navigatorStyle];
-        navigatorStyle = mergedStyle;
-        
-        rccViewController.navigatorStyle = navigatorStyle;
-        
-        [rccViewController setStyleOnInit];
-        [rccViewController updateStyle];
-      }
+    
+    NSDictionary *navigatorStyle = actionParams;
+    
+    // merge the navigatorStyle of our parent
+    if ([self.topViewController isKindOfClass:[RCCViewController class]])
+    {
+      RCCViewController *parent = (RCCViewController*)self.topViewController;
+      NSMutableDictionary *mergedStyle = [NSMutableDictionary dictionaryWithDictionary:parent.navigatorStyle];
+      
+      // there are a few styles that we don't want to remember from our parent (they should be local)
+      [mergedStyle setValuesForKeysWithDictionary:navigatorStyle];
+      navigatorStyle = mergedStyle;
+      
+      parent.navigatorStyle = navigatorStyle;
+      
+      [parent setStyleOnInit];
+      [parent updateStyle];
     }
   }
 }
@@ -395,6 +397,7 @@ NSString const *CALLBACK_ASSOCIATED_ID = @"RCCNavigationController.CALLBACK_ASSO
       NSMutableDictionary *buttonTextAttributes = [RCTHelpers textAttributesFromDictionary:button withPrefix:@"button"];
       if (buttonTextAttributes.allKeys.count > 0) {
         [barButtonItem setTitleTextAttributes:buttonTextAttributes forState:UIControlStateNormal];
+        [barButtonItem setTitleTextAttributes:buttonTextAttributes forState:UIControlStateHighlighted];
       }
     }
     else if (component) {

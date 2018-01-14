@@ -122,7 +122,7 @@ public class SideMenu extends DrawerLayout {
         ContentView sideMenuView = new ContentView(getContext(), params.screenId, params.navigationParams);
         LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
         lp.gravity = params.side.gravity;
-        setSideMenuWidth(sideMenuView);
+        setSideMenuWidth(sideMenuView, params);
         addView(sideMenuView, lp);
         return sideMenuView;
     }
