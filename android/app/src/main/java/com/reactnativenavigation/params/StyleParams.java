@@ -89,6 +89,7 @@ public class StyleParams {
     public StatusBarTextColorScheme statusBarTextColorScheme;
     public Color statusBarColor;
     public boolean statusBarHidden;
+    public boolean drawUnderStatusBar;
     public Color contextualMenuStatusBarColor;
     public Color contextualMenuButtonsColor;
     public Color contextualMenuBackgroundColor;
@@ -122,8 +123,10 @@ public class StyleParams {
     public int titleBarHeight;
     public boolean backButtonHidden;
     public Font titleBarButtonFontFamily;
+    public int titleBarTopPadding;
 
     public Color topTabTextColor;
+    public Font topTabTextFontFamily;
     public Color topTabIconColor;
     public Color selectedTopTabTextColor;
     public Color selectedTopTabIconColor;
